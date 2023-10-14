@@ -3,18 +3,21 @@ import {knex} from '../database'
 import {z} from 'zod'
 import { randomUUID } from 'node:crypto'
 import { checkSessionIdExists } from '../middleware/session-check-id'
-export async function usersRoutes(app: FastifyInstance) {
-  app.get('/',{preHandler: checkSessionIdExists},  async (request) => {
+export async function mealsRoutes(app: FastifyInstance) {
+
+  app.get('/', {preHandler: checkSessionIdExists}, async (request) => {
     const sessionId = request.cookies.sessionId
-    const users = await knex('users').select('*').where({'session_id': sessionId})
-    return {users}
+    console.log(sessionId)
+    const meals = await knex('meals').select('*').where({'session_id': sessionId})
+    return {meals}
   })
 
-  app.post('/', async (request, reply) => {
+  app.post('/', {preHandler : checkSessionIdExists}, async (request, reply) => {
     const createUsersBody = z.object({
-      name: z.string()
+      name: z.string(),
+      description: z.string(),
+      is_diet: z.boolean()
     })
-    const {name} = createUsersBody.parse(request.body)
     let sessionId = request.cookies.sessionId
     if(!sessionId) {
       sessionId = randomUUID()
@@ -23,9 +26,12 @@ export async function usersRoutes(app: FastifyInstance) {
         maxAge: 1000 * 60 * 60 * 24 * 30 //30days
       })
     }
-    await knex('users').insert({
+    const {name, description, is_diet} = createUsersBody.parse(request.body)
+    await knex('meals').insert({
       id: randomUUID(),
-      name,
+      name, 
+      description,
+      is_diet,
       session_id: sessionId
     })
     reply.status(201).send()
