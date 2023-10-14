@@ -7,8 +7,17 @@ export async function mealsRoutes(app: FastifyInstance) {
 
   app.get('/', {preHandler: checkSessionIdExists}, async (request) => {
     const sessionId = request.cookies.sessionId
-    console.log(sessionId)
     const meals = await knex('meals').select('*').where({'session_id': sessionId})
+    return {meals}
+  })
+
+  app.get('/:id', {preHandler: checkSessionIdExists}, async (request) => {
+    const sessionId = request.cookies.sessionId
+    const findMealsByIdParamsSchema = z.object({
+      id: z.string()
+    })
+    const {id} = findMealsByIdParamsSchema.parse(request.params)
+    const meals = await knex('meals').select('*').where({'session_id': sessionId, id})
     return {meals}
   })
 
