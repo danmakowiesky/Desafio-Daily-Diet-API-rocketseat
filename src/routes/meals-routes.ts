@@ -85,4 +85,49 @@ export async function mealsRoutes(app: FastifyInstance) {
     })
     reply.status(201).send()
   })
+
+  app.get('/summary', {preHandler : checkSessionIdExists}, async (request, reply) => {
+    const { sessionId } = request.cookies
+    const totalMeals = await knex('meals')
+      .count()
+      .where({ 'session_id': sessionId })
+      .then((data) => Number(Object.values(data[0])[0]))
+    const mealsInDiet = await knex('meals')
+      .count()
+      .where({ is_diet: Boolean(1), 'session_id': sessionId })
+      .then((data) => Number(Object.values(data[0])[0]))
+    const mealsOutOfDiet = await knex('meals')
+      .count()
+      .where({ is_diet: Boolean(0), 'session_id': sessionId })
+      .then((data) => Number(Object.values(data[0])[0]))
+    const bestDietSequence = await knex('meals')
+      .select('*')
+      .where({ 'session_id': sessionId})
+      .orderBy('created_at', 'desc')
+      .then((m) => {
+        let bestDietSequence = 0
+        let currentBestDietSequence = 0
+        m.forEach((meal) => {
+          if (meal.is_diet) {
+            currentBestDietSequence++
+            if (currentBestDietSequence > bestDietSequence) {
+              bestDietSequence = currentBestDietSequence
+            }
+          } else {
+            if (currentBestDietSequence > bestDietSequence) {
+              bestDietSequence = currentBestDietSequence
+            }
+            currentBestDietSequence = 0
+          }
+        })
+        return bestDietSequence
+      })
+    const summary = {
+      total_meals: totalMeals,
+      meals_in_diet: mealsInDiet,
+      meals_out_of_diet: mealsOutOfDiet,
+      best_diet_sequence: bestDietSequence,
+    }
+    return reply.status(200).send({ summary })
+  })
 }
