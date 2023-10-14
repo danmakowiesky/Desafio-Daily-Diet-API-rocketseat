@@ -86,7 +86,7 @@ export async function mealsRoutes(app: FastifyInstance) {
     reply.status(201).send()
   })
 
-  app.get('/summary', {preHandler : checkSessionIdExists}, async (request, reply) => {
+  app.get('/metrics', {preHandler : checkSessionIdExists}, async (request, reply) => {
     const { sessionId } = request.cookies
     const totalMeals = await knex('meals')
       .count()
