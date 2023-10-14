@@ -3,9 +3,9 @@ import {knex} from '../database'
 import {z} from 'zod'
 import { randomUUID } from 'node:crypto'
 export async function usersRoutes(app: FastifyInstance) {
-  app.get('/', async (request, reply) => {
-    console.log('hello')
-    return reply.status(200).send({message: 'usuario hello'})
+  app.get('/', async () => {
+    const users = await knex('users').select('*')
+    return {users}
   })
 
   app.post('/', async (request, reply) => {
